@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 # Instala dependências do sistema se necessário (ex: build-essential para algumas libs)
-# RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev
+RUN apt-get update && apt-get install -y --no-install-recommends curl netcat-traditional procps
 
 # Copia o arquivo de dependências primeiro para aproveitar o cache do Docker
 COPY requirements.txt .

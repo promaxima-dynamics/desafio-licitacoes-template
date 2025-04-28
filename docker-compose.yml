@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15-alpine
@@ -15,8 +13,8 @@ services:
     healthcheck:
         # Simplificado: Apenas checa se o usuário padrão consegue conectar
         test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-        interval: 5s
-        timeout: 5s
+        interval: 3s
+        timeout: 3s
         retries: 5
 
   api:
@@ -24,18 +22,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: desafio_api
-    # Ajustado: Executa manage.py que está na raiz do volume mapeado
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      # Ajustado: Mapeia a pasta backend local para /app/backend
-      - ./backend:/app/backend
-      # Mapeia a pasta sample_data local para /app/sample_data (fora do backend)
+      - ./backend:/app
       - ./sample_data:/app/sample_data
-    working_dir: /app/backend # Define o diretório padrão para o comando
     ports:
       - "8000:8000"
     environment:
-      - DJANGO_SETTINGS_MODULE=backend.settings
+      - DJANGO_SETTINGS_MODULE=settings
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-local-dev-key}
       - DJANGO_DEBUG=${DJANGO_DEBUG:-True}
       - POSTGRES_DB=${POSTGRES_DB:-licitacoes}
@@ -44,11 +38,17 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - PYTHONUNBUFFERED=1
-      # Garante que /app esteja no PYTHONPATH para encontrar o módulo backend
-      - PYTHONPATH=/app
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   web:
     build:
@@ -65,6 +65,12 @@ services:
       # Ex: VITE_API_BASE_URL=http://api:8000
     depends_on:
       - api
+    networks:
+          - app-network
+    
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
