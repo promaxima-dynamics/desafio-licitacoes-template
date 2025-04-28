@@ -1,0 +1,20 @@
+# Base Django dependencies
+django>=4.0,<5.0
+psycopg2-binary>=2.9 # For PostgreSQL connection
+
+# API dependencies
+djangorestframework>=3.14
+# django-filter>=23.0 # Uncomment if using DRF filters
+# djangorestframework-simplejwt>=5.0 # Uncomment if using JWT authentication
+# django-cors-headers>=4.0 # Uncomment if frontend is on a different origin
+
+# Data handling
+pandas>=1.5 # For reading XLS file in ingest command
+openpyxl>=3.0 # Required by pandas to read .xlsx files (might also work for .xls)
+
+# Utilities
+python-dotenv>=0.20 # Optional: for loading environment variables from .env file
+
+# Testing
+pytest>=7.0
+pytest-django>=4.5 

@@ -1,0 +1,72 @@
+name: CI Desafio Licitacoes
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    services:
+      # Usado pelo docker-compose para conectar ao host docker
+      docker:
+        image: docker:dind
+        options: --privileged
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Necessário para o script check_commits.sh poder comparar branches
+
+    - name: Set up Docker Compose
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and Run Docker Compose services
+      run: docker-compose up --build -d
+
+    - name: Wait for services to be healthy (basic check)
+      run: |
+        echo "Waiting for DB..."
+        until docker-compose exec -T db pg_isready -U postgres; do sleep 1; done
+        echo "Waiting for API... (checking port 8000)"
+        until docker-compose exec -T api netstat -tuln | grep ':8000'; do sleep 1; done
+        # Adicionar verificação para frontend se necessário
+        echo "Services appear to be up."
+      timeout-minutes: 2
+
+    # Passo opcional: Rodar migrations se necessário antes dos testes
+    # - name: Run DB Migrations
+    #   run: docker-compose exec -T api python manage.py migrate
+
+    - name: Run Backend Tests (pytest)
+      run: docker-compose exec -T api pytest
+
+    # Passo opcional: Rodar Frontend Tests (substituir pelo comando correto)
+    # - name: Run Frontend Tests
+    #   run: docker-compose exec -T web npm run test
+
+    - name: Run Hash Verification Script
+      run: bash scripts/check_hash.sh
+
+    - name: Run Commit Verification Script
+      run: |
+        # Determina a branch base dependendo do evento (push ou pull_request)
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          BASE_REF=${{ github.base_ref }}
+          CURRENT_REF=${{ github.head_ref }}
+        else
+          BASE_REF=main # Assume main como base para pushes em develop
+          CURRENT_REF=develop
+        fi
+        echo "Base ref: $BASE_REF, Current ref: $CURRENT_REF"
+        bash scripts/check_commits.sh $CURRENT_REF $BASE_REF
+
+    - name: Clean up Docker Compose services
+      if: always() # Garante que rode mesmo se passos anteriores falharem
+      run: docker-compose down -v --remove-orphans 
