@@ -1,77 +1,98 @@
 name: CI Desafio Licitacoes
 
 on:
-  push:
-    branches: [ develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  build_and_test:
+  validate-test-build:
+    name: Validação e Testes
     runs-on: ubuntu-latest
-
     services:
-      # Usado pelo docker-compose para conectar ao host docker
       docker:
         image: docker:dind
         options: --privileged
 
     steps:
+    # === VALIDAÇÃO DE CÓDIGO E COMMITS ===
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Necessário para o script check_commits.sh poder comparar branches
+        fetch-depth: 0
+        fetch-tags: true
+        ref: ${{ github.head_ref || github.ref_name }}
+    
+    - name: Setup Git para comparação de branches
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        echo "Fetching all branches..."
+        git fetch --all --prune --tags
+        echo "Available branches:"
+        git branch -a
 
-    - name: Set up Docker Compose
+    - name: Verificar integridade dos arquivos
+      run: bash scripts/check_hash.sh
+
+    - name: Verificar commits
+      run: |
+        # Determina a branch base dependendo do evento
+        BASE_REF=${{ github.base_ref }}
+        CURRENT_REF=${{ github.head_ref }}
+        echo "Base ref: $BASE_REF, Current ref: $CURRENT_REF"
+        bash scripts/check_commits.sh $CURRENT_REF $BASE_REF
+
+    # === CONFIGURAÇÃO DO AMBIENTE ===
+    - name: Configurar Docker Compose
       uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
+    
+    - name: Configurar Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build and Run Docker Compose services
+    - name: Construir e executar serviços Docker
       run: docker compose up --build -d
 
-    - name: Apply migrations immediately
+    - name: Verificar rede Docker e conectividade
       run: |
-        sleep 3  # Pequena pausa para o container iniciar
-        echo "Aplicando migrações imediatamente:"
-        docker compose exec -T api python manage.py migrate || echo "Migrations failed, will retry"
-
-    - name: Check Docker network and connectivity
-      run: |
-        echo "Docker Network Configuration:"
+        echo "Configuração da rede Docker:"
         docker network ls
-        docker network inspect app-network || echo "Network not found"
+        docker network inspect app-network || echo "Rede não encontrada"
         
-        echo "Container Status:"
+        echo "Status dos containers:"
         docker ps -a
 
-    - name: Wait for DB to be healthy
+    # === PREPARAÇÃO DO AMBIENTE DE TESTES ===
+    - name: Aguardar disponibilidade do banco de dados
       run: |
-        echo "Waiting for DB..."
+        echo "Aguardando banco de dados..."
         for i in {1..20}; do
           if docker compose exec -T db pg_isready -U postgres; then
-            echo "Database is ready!"
+            echo "Banco de dados pronto!"
             break
           fi
-          echo "Attempt $i/20: Database not ready yet, waiting..."
+          echo "Tentativa $i/20: Banco de dados ainda não está pronto, aguardando..."
           sleep 1
         done
         docker compose exec -T db pg_isready -U postgres
       timeout-minutes: 1
 
-    - name: Wait for API to be ready
+    - name: Aplicar migrações
       run: |
-        echo "Waiting for API to be ready..."
+        sleep 3
+        echo "Aplicando migrações:"
+        docker compose exec -T api python manage.py migrate
+
+    - name: Aguardar disponibilidade da API
+      run: |
+        echo "Aguardando API..."
         for i in {1..30}; do
           if docker compose exec -T api curl -s --retry 1 --max-time 2 http://localhost:8000/admin/ > /dev/null; then
-            echo "API is ready!"
+            echo "API pronta!"
             break
           fi
-          echo "Attempt $i/30: API not ready yet, waiting..."
-          # A cada 5 tentativas, tenta aplicar migrações e verificar logs
+          echo "Tentativa $i/30: API ainda não está pronta, aguardando..."
           if [ $((i % 5)) -eq 0 ]; then
             echo "=== Tentativa $i: Verificando status do sistema ==="
-            docker compose exec -T api python manage.py migrate || echo "Migration failed"
             echo "=== Últimas 20 linhas de log da API ==="
             docker logs --tail 20 desafio_api || echo "Não foi possível obter logs"
           fi
@@ -79,29 +100,14 @@ jobs:
         done
       timeout-minutes: 2
 
-    - name: Run Backend Tests (pytest)
+    # === TESTES ===
+    - name: Executar testes do Backend (pytest)
       run: docker compose exec -T api pytest
 
-    # Passo opcional: Rodar Frontend Tests (substituir pelo comando correto)
-    # - name: Run Frontend Tests
-    #   run: docker-compose exec -T web npm run test
+    - name: Executar testes do Frontend
+      run: docker compose exec -T web npm run test
 
-    - name: Run Hash Verification Script
-      run: bash scripts/check_hash.sh
-
-    - name: Run Commit Verification Script
-      run: |
-        # Determina a branch base dependendo do evento (push ou pull_request)
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          BASE_REF=${{ github.base_ref }}
-          CURRENT_REF=${{ github.head_ref }}
-        else
-          BASE_REF=main # Assume main como base para pushes em develop
-          CURRENT_REF=develop
-        fi
-        echo "Base ref: $BASE_REF, Current ref: $CURRENT_REF"
-        bash scripts/check_commits.sh $CURRENT_REF $BASE_REF
-
-    - name: Clean up Docker Compose services
-      if: always() # Garante que rode mesmo se passos anteriores falharem
+    # === LIMPEZA DE RECURSOS ===
+    - name: Limpar serviços Docker Compose
+      if: always()
       run: docker compose down -v --remove-orphans 
