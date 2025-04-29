@@ -46,7 +46,7 @@ Você deve entregar esse sistema inicial em **Docker**, usando Django + DRF no b
 1.  Clique em **"Use this template → Create a new repository"**.
     *   Marque **Private**.
     *   Nome sugerido: `desafio-licitacoes-SEU_NOME`.
-2.  Em *Settings → Collaborators*, adicione **`github.com/marcossouz`** com permissão **Write**.
+2.  Em *Settings → Collaborators*, adicione **`marcossouz`** com permissão **Write**.
 3.  Trabalhe sempre em uma branch `develop`.
 4.  Ao finalizar **todos** os itens da [Checklist](#checklist-de-commits), abra **Pull Request** `develop → main`.
 5.  Aguarde o **GitHub Actions** ficar 🟢 verde — ele executa testes e verificações automáticas.
