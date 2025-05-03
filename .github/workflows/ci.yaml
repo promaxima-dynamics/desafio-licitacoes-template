@@ -31,6 +31,10 @@ jobs:
         echo "Available branches:"
         git branch -a
 
+    - name: Fetch base branch as local
+      run: |
+        git fetch --depth=1 origin ${{ github.base_ref }}:${{ github.base_ref }}
+
     - name: Verificar integridade dos arquivos
       run: bash scripts/check_hash.sh
 
