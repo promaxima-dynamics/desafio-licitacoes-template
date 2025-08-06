@@ -16,7 +16,7 @@ from django.test import TestCase
 
 # Define o caminho base do projeto para encontrar o arquivo de sample
 BASE_DIR = pathlib.Path(__file__).resolve().parents[3] # Ajuste o número de parents se necessário
-SAMPLE_XLS_PATH = BASE_DIR / "sample_data" / "xls_conformidade_gov_20250414_195721251.xls"
+SAMPLE_XLS_PATH = BASE_DIR / "app" / "sample_data" / "xls_conformidade_gov_20250414_195721251.xls"
 
 
 class IngestCommandTest(TestCase):
