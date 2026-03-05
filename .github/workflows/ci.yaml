@@ -105,11 +105,30 @@ jobs:
       timeout-minutes: 2
 
     # === TESTES ===
-    - name: Executar testes do Backend (pytest)
+    - name: Executar testes do Backend (diferencial)
+      id: backend_tests
+      continue-on-error: true
       run: docker compose exec -T api pytest
 
-    - name: Executar testes do Frontend
+    - name: Executar testes do Frontend (diferencial)
+      id: frontend_tests
+      continue-on-error: true
       run: docker compose exec -T web npm run test
+
+    - name: Resumo dos diferenciais
+      if: always()
+      run: |
+        if [ "${{ steps.backend_tests.outcome }}" = "failure" ]; then
+          echo "INFO: Testes de backend falharam (diferencial)."
+        else
+          echo "INFO: Testes de backend passaram."
+        fi
+
+        if [ "${{ steps.frontend_tests.outcome }}" = "failure" ]; then
+          echo "INFO: Testes de frontend falharam (diferencial)."
+        else
+          echo "INFO: Testes de frontend passaram."
+        fi
 
     # === LIMPEZA DE RECURSOS ===
     - name: Limpar serviços Docker Compose

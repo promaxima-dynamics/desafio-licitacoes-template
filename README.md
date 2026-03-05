@@ -9,10 +9,12 @@
 3. [Fluxo de participação](#fluxo-de-participação)
 4. [Estrutura inicial do projeto](#estrutura-inicial-do-projeto)
 5. [Checklist de commits](#checklist-de-commits)
-6. [Requisitos funcionais](#requisitos-funcionais)
-7. [Como testar com Docker](#como-testar-com-docker)
-8. [Perguntas conceituais](#perguntas-conceituais)
-9. [Critérios de avaliação](#critérios-de-avaliação)
+6. [Entregáveis obrigatórios (MVP)](#entregáveis-obrigatórios-mvp)
+7. [Diferenciais (pontuação extra)](#diferenciais-pontuação-extra)
+8. [Evidências de autoria (obrigatório)](#evidências-de-autoria-obrigatório)
+9. [Como testar com Docker](#como-testar-com-docker)
+10. [Perguntas conceituais](#perguntas-conceituais)
+11. [Critérios de avaliação](#critérios-de-avaliação)
 
 ---
 
@@ -32,7 +34,7 @@ A planilha-fonte está disponível na seção **PMVG** (Preço Máximo de Venda 
 ---
 
 ## História (Cenário fictício)
-A rede de farmácias **VidaMais** pretende participar de compras corporativas e precisa saber, com rapidez, **quais preços de venda estão sendo praticados** para cada medicamento referenciado na planilha PMVG. O time de TI recebeu a missão de entregar um painel interno que:
+A rede de farmácias **VidaMais** pretende participar de compras corporativas e precisa saber, com rapidez, **quais preços de venda estão sendo praticados** para cada medicamento referenciado na planilha PMVG. O time de desenvolvimento recebeu a missão de entregar um painel interno que:
 
 1.  **Importe** a planilha PMVG (fornecida ou baixada);
 2.  **Armazene** cada registro em banco, mantendo histórico se possível;
@@ -119,11 +121,11 @@ Faça um commit por linha **exatamente** com o prefixo indicado (o CI valida):
 | 3 | Endpoints DRF              | `feat(api):`                  |
 | 4 | UI de busca + tabela       | `feat(ui):`                   |
 | 5 | Exportação XLS             | `feat(export):`               |
-| 6 | Refatoração + testes OK    | `refactor:` ou `test:`        |
+| 6 | Refatoração/documentação (opcional) | `refactor:` ou `test:` |
 
 ---
 
-## Requisitos funcionais
+## Entregáveis obrigatórios (MVP)
 
 **1. Ingestão de dados:**
 *   Implementar o comando `python manage.py ingest_licitacoes <caminho_do_xls>`.
@@ -150,9 +152,31 @@ Faça um commit por linha **exatamente** com o prefixo indicado (o CI valida):
     *   Botão "Exportar Selecionados (XLS)" que baixa uma planilha apenas com os itens marcados.
     *   Exibição das estatísticas (`/api/items/stats/`) relacionadas à busca atual (pode ser em um card, tooltip, modal, etc.).
 
-**4. Testes:**
-*   **Backend:** Manter/criar testes unitários (`pytest`) para cobrir a lógica de ingestão e os endpoints da API (mínimo de 5 testes passando).
-*   **Frontend:** Criar testes de componente (`Vitest` ou `Jest`) para a tabela e/ou formulário de busca (mínimo de 2 testes passando).
+---
+
+## Diferenciais (pontuação extra)
+Você não precisa entregar todos os itens abaixo para ser aprovado no desafio.
+
+*   Testes automatizados (backend e/ou frontend).
+*   Tratamento robusto de dados sujos (datas inválidas, preços ausentes, texto com espaços extras, etc.).
+*   Melhorias de performance (queries otimizadas, paginação eficiente, redução de chamadas).
+*   Melhorias de UX (feedback de loading/erro, filtros adicionais, melhor legibilidade da tabela).
+*   Logs e observabilidade básica no processo de ingestão.
+
+---
+
+## Evidências de autoria (obrigatório)
+Além do código funcional, envie evidências curtas de decisão técnica:
+
+*   Preencha o arquivo `DECISOES.md` com:
+    *   3 decisões técnicas relevantes;
+    *   1 trade-off (escolha com prós e contras)
+    *   1 risco conhecido;
+    *   1 melhoria que faria com +2h.
+*   Use o template de Pull Request (`.github/pull_request_template.md`) respondendo objetivamente:
+    *   o que foi implementado;
+    *   o que não foi implementado e por quê;
+    *   como validar manualmente.
 
 ---
 
@@ -192,16 +216,15 @@ Responda diretamente neste `README.md`, abaixo desta seção (máximo 200 palavr
 
 | Item                                                | Pontos |
 |-----------------------------------------------------|--------|
-| Funcionalidades completas (backend + frontend)      | 35     |
+| Funcionalidades MVP (backend + frontend)            | 55     |
 | Qualidade de código (PEP8/ESLint, clareza, SOLID)   | 20     |
-| Testes automatizados (backend + frontend passando)  | 15     |
-| Commits seguindo o padrão e organização do Git      | 10     |
+| Clareza técnica (DECISOES.md + descrição de PR)     | 15     |
+| Diferenciais (inclui testes automatizados)          | 10     |
+| Commits seguindo o padrão e organização do Git      | 5      |
 | Respostas às perguntas conceituais                  | 10     |
-| `docker-compose.yml` funcional e bem configurado    | 5      |
-| CI (GitHub Actions) passando (verde)                | 5      |
 | **Desclassificação Automática:**                    |        |
 | * Hash de verificação ausente/modificado            |        |
 | * Commits obrigatórios não encontrados pelo CI      |        |
-| * Erros graves no `docker-compose up` ou testes     |        |
+| * Erros graves no `docker-compose up`               |        |
 
 Boa sorte — valorizamos clareza, qualidade e método! 

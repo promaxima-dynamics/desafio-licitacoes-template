@@ -13,9 +13,8 @@ REQUIRED_PREFIXES=(
   "feat(api):"
   "feat(ui):"
   "feat(export):"
-  # "refactor:" ou "test:" são opcionais para o último, verificamos pelo menos um
 )
-REFACTOR_OR_TEST_PREFIXES=("refactor:" "test:")
+OPTIONAL_PREFIXES=("refactor:" "test:")
 
 echo "Checking required commit prefixes on branch '${CURRENT_BRANCH}' against '${BASE_BRANCH}'..."
 
@@ -31,7 +30,6 @@ if [ -z "$COMMIT_LOG" ]; then
 fi
 
 missing_prefixes=()
-found_refactor_or_test=false
 
 # Checa prefixos obrigatórios
 for prefix in "${REQUIRED_PREFIXES[@]}"; do
@@ -42,21 +40,17 @@ for prefix in "${REQUIRED_PREFIXES[@]}"; do
   fi
 done
 
-# Checa se pelo menos um de refactor/test existe
-for prefix in "${REFACTOR_OR_TEST_PREFIXES[@]}"; do
+found_optional=false
+for prefix in "${OPTIONAL_PREFIXES[@]}"; do
   if echo "$COMMIT_LOG" | grep -qF "$prefix"; then
-    echo "OK: Found commit with prefix '$prefix'"
-    found_refactor_or_test=true
+    echo "INFO: Found optional commit with prefix '$prefix'"
+    found_optional=true
     break
   fi
 done
-
-if ! $found_refactor_or_test; then
-  rt_prefixes=$(IFS=, ; echo "${REFACTOR_OR_TEST_PREFIXES[*]}")
-  missing_prefixes+=("one of [${rt_prefixes}]")
-  echo "ERROR: Missing commit with prefix 'refactor:' or 'test:'"
+if ! $found_optional; then
+  echo "INFO: No optional 'refactor:'/'test:' commit found. This is allowed."
 fi
-
 
 if [ ${#missing_prefixes[@]} -ne 0 ]; then
   echo "Commit check FAILED. Missing prefixes: ${missing_prefixes[*]}"
